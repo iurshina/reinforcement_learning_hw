@@ -19,7 +19,8 @@ def first_visit_mc_prediction(steps):
         returns = {}
         while not done:
             player_sum, dealer_card, useable_ace = obs
-            returns[obs] = 0
+            if player_sum > 11:
+                returns[obs] = 0
 
             obs, reward, done, _ = env.step(0 if player_sum >= 20 else 1)
 
@@ -89,7 +90,6 @@ def mc_es(steps):
     return Q, pi
 
 
-# todo: draw a surface
 def draw_v(V):
     no_ace_player_sums = []
     no_ace_dealer_card = []
@@ -109,14 +109,14 @@ def draw_v(V):
             no_ace_dealer_card.append(k[1])
             no_ace_reward.append(v)
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(no_ace_dealer_card, no_ace_player_sums, no_ace_reward)
+    ax = plt.axes(projection='3d')
+    ax.plot_trisurf(ace_dealer_card, ace_player_sums, ace_reward)
+    ax.set_title('with unsable ace')
     plt.show()
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(ace_dealer_card, ace_player_sums, ace_reward)
+    ax = plt.axes(projection='3d')
+    ax.plot_trisurf(no_ace_dealer_card, no_ace_player_sums, no_ace_reward)
+    ax.set_title('without unsable ace')
     plt.show()
 
 
