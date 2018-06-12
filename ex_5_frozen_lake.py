@@ -1,10 +1,24 @@
 import numpy as np
 from gym.envs.toy_text.frozen_lake import FrozenLakeEnv
+import matplotlib.pyplot as plt
 
+# non determ and large eps?
+# question one
+# alpha? gamma? try
+
+# SFFF
+# FHFH
+# FFFH
+# HFFG
+
+# LEFT = 0
+# DOWN = 1
+# RIGHT = 2
+# UP = 3
 
 alpha = 0.4
 gamma = 0.99
-epsilon = 0.33
+epsilon = 0.33 # only with large epsilon works
 
 
 def action(Q, obs, space_n):
@@ -14,10 +28,6 @@ def action(Q, obs, space_n):
         return np.argmax(Q[obs])
 
 
-# LEFT = 0
-# DOWN = 1
-# RIGHT = 2
-# UP = 3
 def get_policy(Q):
     pi = {}
     for i in range(0, len(Q)):
@@ -26,10 +36,58 @@ def get_policy(Q):
 
 
 def get_v(Q):
-    V = {}
+    V = [0] * 16
     for i in range(0, len(Q)):
         V[i] = np.max(Q[i])
     return V
+
+
+def plot_value_func(value_func, title):
+    a = np.reshape(value_func, (4, 4))
+
+    a = np.flip(a, 0)
+
+    heatmap = plt.pcolor(a)
+
+    for y in range(a.shape[0]):
+        for x in range(a.shape[1]):
+            plt.text(x + 0.5, y + 0.5, '%.4f' % a[y, x],
+                     horizontalalignment='center',
+                     verticalalignment='center',
+                     )
+
+    plt.title(title)
+    plt.colorbar(heatmap)
+    plt.show()
+
+
+def action_by_num(num):
+    if num == 0:
+        return "LEFT"
+    if num == 1:
+        return "DOWN"
+    if num == 2:
+        return "RIGHT"
+    if num == 3:
+        return "UP"
+
+
+def plot_policy(policy, title):
+    a = np.reshape([[1, 1, 1, 1] * 4], (4, 4))
+    p = np.reshape(policy.values(), (4, 4))
+    p = np.flip(p, 0)
+    heatmap = plt.pcolor(a)
+
+    for y in range(a.shape[0]):
+        for x in range(a.shape[1]):
+            plt.text(x + 0.5, y + 0.5, action_by_num(p[y, x]),
+                     horizontalalignment='center',
+                     verticalalignment='center',
+                     )
+
+    plt.colorbar(heatmap)
+    plt.title(title)
+    plt.show()
 
 
 def expectation(q, is_slippery):
@@ -153,25 +211,42 @@ def expected_sarsa(env, steps, is_slippery):
     return Q, get_v(Q), get_policy(Q)
 
 
-# todo: draw everything
 def main():
     env = FrozenLakeEnv(is_slippery=True)
 
-    # doesn't really work
+    # doesn't really converge (even with large epsilon)
     Q, V, pi = sarsa(env, 10000)
-    Q, V, pi = q_learning(env, 10000)
+    plot_value_func(V, "value func: sarsa - non-determ")
+    plot_policy(pi, "policy: sarsa - non-determ")
+    print "pi1", pi
 
-    Q, V, pi = expected_sarsa(env, 10000, True)
+    Q, V, pi = q_learning(env, 1000000)
+    plot_value_func(V, "value func: q-learning - non-determ")
+    plot_policy(pi, "policy: q-learning - non-determ")
+    print "pi2", pi
+
+    Q, V, pi = expected_sarsa(env, 1000000, True)
+    plot_value_func(V, "value func: expected sarsa - non-determ")
+    plot_policy(pi, "policy: expected sarsa - non-determ")
+    print "pi3", pi
 
     # deterministic works
     env = FrozenLakeEnv(is_slippery=False)
 
     Q, V, pi = sarsa(env, 10000)
+    plot_value_func(V, "value func: sarsa - determ")
+    plot_policy(pi, "policy: sarsa - determ")
+    print "pi4", pi
+
     Q, V, pi = q_learning(env, 10000)
+    plot_value_func(V, "value func: q-learning - determ")
+    plot_policy(pi, "policy: q-learning - determ")
+    print "pi5", pi
 
     Q, V, pi = expected_sarsa(env, 10000, False)
-
-    print
+    plot_value_func(V, "value func: expected sarsa - determ")
+    plot_policy(pi, "policy: expected sarsa - determ")
+    print "pi6", pi
 
 
 if __name__ == '__main__':
