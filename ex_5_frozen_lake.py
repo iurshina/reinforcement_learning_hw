@@ -2,8 +2,6 @@ import numpy as np
 from gym.envs.toy_text.frozen_lake import FrozenLakeEnv
 import matplotlib.pyplot as plt
 
-# non determ
-# question one
 
 # SFFF
 # FHFH
@@ -18,9 +16,6 @@ import matplotlib.pyplot as plt
 
 epsilon = 0.1
 alpha = 0.1  # learning rate
-
-# alpha = 1 # (deterministic)
-
 gamma = 0.9  # discount factor
 
 
@@ -91,12 +86,12 @@ def plot_policy(policy, title):
 
 
 def expectation(q, is_slippery):
-    p_for_e = epsilon / len(q)
+    # p_for_e = epsilon / len(q)
     slip_p = 0
     if is_slippery:
         slip_p = 0.33
-    max_p = 1 - epsilon + p_for_e - slip_p
-    others_p = p_for_e + (slip_p / 3)
+    max_p = 1 - slip_p # - epsilon + p_for_e
+    others_p = (slip_p / 3) # + p_for_e
 
     max = np.max(q)
 
@@ -203,9 +198,9 @@ def expected_sarsa(env, steps, is_slippery):
 
 
 def main():
+    # non-deterministic
     env = FrozenLakeEnv(is_slippery=True)
 
-    # doesn't really converge (even with a small alpha)
     Q, V, pi = sarsa(env, 2000)
     plot_value_func(V, "value func: sarsa - non-determ")
     plot_policy(pi, "policy: sarsa - non-determ")
@@ -224,7 +219,7 @@ def main():
     # print "pi3", pi
     print "Q3:", Q
 
-    # deterministic works
+    # deterministic
     env = FrozenLakeEnv(is_slippery=False)
 
     Q, V, pi = sarsa(env, 1000)
