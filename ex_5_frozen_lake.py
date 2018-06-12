@@ -2,9 +2,8 @@ import numpy as np
 from gym.envs.toy_text.frozen_lake import FrozenLakeEnv
 import matplotlib.pyplot as plt
 
-# non determ and large eps?
+# non determ
 # question one
-# alpha? gamma? try
 
 # SFFF
 # FHFH
@@ -16,9 +15,13 @@ import matplotlib.pyplot as plt
 # RIGHT = 2
 # UP = 3
 
-alpha = 0.4
-gamma = 0.99
-epsilon = 0.33 # only with large epsilon works
+
+epsilon = 0.1
+alpha = 0.1  # learning rate
+
+# alpha = 1 # (deterministic)
+
+gamma = 0.9  # discount factor
 
 
 def action(Q, obs, space_n):
@@ -29,10 +32,7 @@ def action(Q, obs, space_n):
 
 
 def get_policy(Q):
-    pi = {}
-    for i in range(0, len(Q)):
-        pi[i] = np.argmax(Q[i])
-    return pi
+    return Q.argmax(axis=1)
 
 
 def get_v(Q):
@@ -73,8 +73,8 @@ def action_by_num(num):
 
 
 def plot_policy(policy, title):
-    a = np.reshape([[1, 1, 1, 1] * 4], (4, 4))
-    p = np.reshape(policy.values(), (4, 4))
+    a = np.ones((4, 4))
+    p = np.reshape(policy, (4, 4))
     p = np.flip(p, 0)
     heatmap = plt.pcolor(a)
 
@@ -115,25 +115,22 @@ def expectation(q, is_slippery):
 # task 2
 def sarsa(env, steps):
     Q = np.zeros([env.observation_space.n, env.action_space.n])
+    for i in range(len(Q)):
+        if i not in (5, 7, 11, 12, 15):
+            Q[i] = [1, 1, 1, 1]
+
     t = 0
     for i in range(steps):
-        observation = env.reset()
-        act = action(Q, observation, env.action_space.n)
-
-        prev_obs = None
-        prev_act = None
+        prev_obs = env.reset()
+        prev_act = action(Q, prev_obs, env.action_space.n)
 
         done = False
         while not done:
-            observation, reward, done, info = env.step(act)
+            observation, reward, done, info = env.step(prev_act)
             act = action(Q, observation, env.action_space.n)
 
-            if prev_obs is not None:
-                prev_q = Q[prev_obs][prev_act]
-                if done:
-                    Q[prev_obs][prev_act] = prev_q + alpha * (reward - prev_q)
-                else:
-                    Q[prev_obs][prev_act] = prev_q + alpha * (reward + gamma * Q[observation][act] - prev_q)
+            prev_q = Q[prev_obs][prev_act]
+            Q[prev_obs][prev_act] = prev_q + alpha * (reward + gamma * Q[observation][act] - prev_q)
 
             prev_obs = observation
             prev_act = act
@@ -148,25 +145,22 @@ def sarsa(env, steps):
 # task 3
 def q_learning(env, steps):
     Q = np.zeros([env.observation_space.n, env.action_space.n])
+    for i in range(len(Q)):
+        if i not in (5, 7, 11, 12, 15):
+            Q[i] = [1, 1, 1, 1]
+
     t = 0
     for i in range(steps):
-        observation = env.reset()
-        act = action(Q, observation, env.action_space.n)
-
-        prev_obs = None
-        prev_act = None
+        prev_obs = env.reset()
+        prev_act = action(Q, prev_obs, env.action_space.n)
 
         done = False
         while not done:
-            observation, reward, done, info = env.step(act)
+            observation, reward, done, info = env.step(prev_act)
             act = action(Q, observation, env.action_space.n)
 
-            if prev_obs is not None:
-                prev_q = Q[prev_obs][prev_act]
-                if done:
-                    Q[prev_obs][prev_act] = prev_q + alpha * (reward - prev_q)
-                else:
-                    Q[prev_obs][prev_act] = prev_q + alpha * (reward + gamma * np.max(Q[observation]) - prev_q)
+            prev_q = Q[prev_obs][prev_act]
+            Q[prev_obs][prev_act] = prev_q + alpha * (reward + gamma * np.max(Q[observation]) - prev_q)
 
             prev_obs = observation
             prev_act = act
@@ -181,25 +175,22 @@ def q_learning(env, steps):
 # task 5
 def expected_sarsa(env, steps, is_slippery):
     Q = np.zeros([env.observation_space.n, env.action_space.n])
+    for i in range(len(Q)):
+        if i not in (5, 7, 11, 12, 15):
+            Q[i] = [1, 1, 1, 1]
+
     t = 0
     for i in range(steps):
-        observation = env.reset()
-        act = action(Q, observation, env.action_space.n)
-
-        prev_obs = None
-        prev_act = None
+        prev_obs = env.reset()
+        prev_act = action(Q, prev_obs, env.action_space.n)
 
         done = False
         while not done:
-            observation, reward, done, info = env.step(act)
+            observation, reward, done, info = env.step(prev_act)
             act = action(Q, observation, env.action_space.n)
 
-            if prev_obs is not None:
-                prev_q = Q[prev_obs][prev_act]
-                if done:
-                    Q[prev_obs][prev_act] = prev_q + alpha * (reward - prev_q)
-                else:
-                    Q[prev_obs][prev_act] = prev_q + alpha * (reward + gamma * expectation(Q[observation], is_slippery) - prev_q)
+            prev_q = Q[prev_obs][prev_act]
+            Q[prev_obs][prev_act] = prev_q + alpha * (reward + gamma * expectation(Q[observation], is_slippery) - prev_q)
 
             prev_obs = observation
             prev_act = act
@@ -214,39 +205,45 @@ def expected_sarsa(env, steps, is_slippery):
 def main():
     env = FrozenLakeEnv(is_slippery=True)
 
-    # doesn't really converge (even with large epsilon)
-    Q, V, pi = sarsa(env, 10000)
+    # doesn't really converge (even with a small alpha)
+    Q, V, pi = sarsa(env, 2000)
     plot_value_func(V, "value func: sarsa - non-determ")
     plot_policy(pi, "policy: sarsa - non-determ")
-    print "pi1", pi
+    # print "pi1", pi
+    print "Q1:", Q
 
-    Q, V, pi = q_learning(env, 1000000)
+    Q, V, pi = q_learning(env, 2000)
     plot_value_func(V, "value func: q-learning - non-determ")
     plot_policy(pi, "policy: q-learning - non-determ")
-    print "pi2", pi
-
-    Q, V, pi = expected_sarsa(env, 1000000, True)
+    # print "pi2", pi
+    print "Q2:", Q
+    #
+    Q, V, pi = expected_sarsa(env, 2000, True)
     plot_value_func(V, "value func: expected sarsa - non-determ")
     plot_policy(pi, "policy: expected sarsa - non-determ")
-    print "pi3", pi
+    # print "pi3", pi
+    print "Q3:", Q
 
     # deterministic works
     env = FrozenLakeEnv(is_slippery=False)
 
-    Q, V, pi = sarsa(env, 10000)
+    Q, V, pi = sarsa(env, 1000)
     plot_value_func(V, "value func: sarsa - determ")
     plot_policy(pi, "policy: sarsa - determ")
-    print "pi4", pi
+    # print "pi4", pi
+    print "Q4:", Q
 
-    Q, V, pi = q_learning(env, 10000)
+    Q, V, pi = q_learning(env, 1000)
     plot_value_func(V, "value func: q-learning - determ")
     plot_policy(pi, "policy: q-learning - determ")
-    print "pi5", pi
+    # print "pi5", pi
+    print "Q5:", Q
 
-    Q, V, pi = expected_sarsa(env, 10000, False)
+    Q, V, pi = expected_sarsa(env, 1000, False)
     plot_value_func(V, "value func: expected sarsa - determ")
     plot_policy(pi, "policy: expected sarsa - determ")
-    print "pi6", pi
+    # print "pi6", pi
+    print "Q6:", Q
 
 
 if __name__ == '__main__':
